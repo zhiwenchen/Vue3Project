@@ -24,14 +24,14 @@
                     </el-input>
                 </el-form-item>
                 <el-form-item >
-                    <el-input v-model="form.password" placeholder="请输入密码" >
+                    <el-input v-model="form.password" placeholder="请输入密码" type="password" show-password>
                         <template #prefix>
                           <el-icon class="el-input_icon"><lock /></el-icon>
                         </template>
                     </el-input>
                 </el-form-item>
                 <el-form-item>
-                    <el-button type="primary" @click="onSubmit" rounded class="w-[250px]">Create</el-button>
+                    <el-button type="primary" @click="onSubmit" rounded class="w-[250px]" :loading="loading">Create</el-button>
                 </el-form-item>
             </el-form>
         </el-col>
@@ -39,10 +39,18 @@
 </template>
 
 <script lang="ts" setup>
-import { reactive } from 'vue'
+import { reactive,ref } from 'vue'
+import { useRouter } from "vue-router";
 import { User,Lock} from '@element-plus/icons-vue'
-import { FormRules } from "element-plus";
+import { FormRules } from "element-plus"
+import { getinfo, login } from '@/api/manager'
+import { ElNotification } from 'element-plus'
+import { useCookies } from "@vueuse/integrations/useCookies";
+import { log } from 'console';
+
 // do not use same name with ref
+const loading = ref(false)
+
 const form = reactive({
     username: '',
     password: '',
@@ -55,7 +63,30 @@ const rules = {
     ]
 }
 
+const router = useRouter()
+
 const onSubmit = () => {
     console.log('submit!')
+    loading.value = true
+    console.log(`username: ${form.username}`)
+    console.log(`password: ${form.password}`)
+    login(form.username, form.password)
+    .then(res=>{
+        console.log(res)
+        ElNotification({
+            message: "登录成功",
+            type: 'success',
+            duration: 2000
+        })
+        const cookies = useCookies()
+        cookies.set('token',res.token)
+        getinfo().then(res=>{
+            console.log(res);
+        })
+        router.push("/")
+    })
+    .finally(()=>{
+        loading.value = false
+    })
 }
 </script>
